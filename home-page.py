@@ -37,6 +37,17 @@ def obstacle_movement(obstacle_list):
     else:
         return []
 
+def player_animation():
+    global player_surf,player_index
+    
+    if player_rect.bottom < 300:
+        player_surf = player_jump
+    else:
+        player_index += 0.1
+        if player_index >= len(player_walk):
+            player_index = 0
+        player_surf = player_walk[int(player_index)]
+        
 # Initialize pygame
 pygame.init()
 
@@ -60,14 +71,29 @@ sky_surface = pygame.image.load("graphics/sky.png").convert_alpha()
 ground_surface = pygame.image.load("graphics/ground.png").convert_alpha()
 
 # Load snail and fly surfaces
-snail_surf = pygame.image.load("graphics/snail/snail1.png").convert_alpha()
-fly_surf = pygame.image.load("graphics/fly/fly1.png").convert_alpha()
+snail_frame1 = pygame.image.load("graphics/snail/snail1.png").convert_alpha()
+snail_frame2 = pygame.image.load("graphics/snail/snail2.png").convert_alpha()
+snail_frames = [snail_frame1,snail_frame2]
+snail_frame_index = 0
+snail_surf = snail_frames[snail_frame_index]
+
+fly_frame1 = pygame.image.load("graphics/fly/fly1.png").convert_alpha()
+fly_frame2 = pygame.image.load("graphics/fly/fly2.png").convert_alpha()
+fly_frames = [fly_frame1,fly_frame2]
+fly_frame_index = 0 
+fly_surf = fly_frames[fly_frame_index]
 
 # Initialize the list of obstacle rectangles
 obstacle_rect_list = []
 
 # Load player surface and define player rectangle
-player_surf = pygame.image.load("graphics/player/player_walk_1.png").convert_alpha()
+player_walk1 = pygame.image.load("graphics/player/player_walk_1.png").convert_alpha()
+player_walk2 = pygame.image.load("graphics/player/player_walk_2.png").convert_alpha()
+player_walk = [player_walk2,player_walk1]
+player_index = 0 
+player_jump = pygame.image.load("graphics/player/jump.png").convert_alpha()
+
+player_surf = player_walk[player_index]
 player_rect = player_surf.get_rect(midbottom=(80, 300))
 player_gravity = 0
 
@@ -85,6 +111,12 @@ game_message_rect = game_message.get_rect(center=(400, 320))
 # Timer for generating obstacles
 obstacle_timer = pygame.USEREVENT + 1
 pygame.time.set_timer(obstacle_timer, 1500) 
+
+snail_animation_timer = pygame.USEREVENT + 2
+pygame.time.set_timer(snail_animation_timer,500)
+
+fly_animation_timer = pygame.USEREVENT + 3
+pygame.time.set_timer(snail_animation_timer,200)
 
 # Main game loop
 while True:
@@ -106,14 +138,25 @@ while True:
                 # If spacebar is pressed, start the game
                 game_active = True  # Set game to active
                 start_time = int(pygame.time.get_ticks() / 1000)
-
-        if event.type == obstacle_timer and game_active:
-            if randint(0, 2):
-                # Generate snail obstacles at regular intervals
-                obstacle_rect_list.append(snail_surf.get_rect(bottomright=(randint(900, 1100), 300)))
-            else:
-                # Generate fly obstacles at regular intervals
-                obstacle_rect_list.append(fly_surf.get_rect(bottomright=(randint(900, 1100), 210)))
+        if game_active:
+            if event.type == obstacle_timer :
+                if randint(0, 2):
+                    # Generate snail obstacles at regular intervals
+                    obstacle_rect_list.append(snail_surf.get_rect(bottomright=(randint(900, 1100), 300)))
+                else:
+                    # Generate fly obstacles at regular intervals
+                    obstacle_rect_list.append(fly_surf.get_rect(bottomright=(randint(900, 1100), 210)))
+            if event.type == snail_animation_timer:
+                if snail_frame_index == 0 :
+                    snail_frame_index = 1
+                else:
+                    snail_frame_index = 0
+                snail_surf = snail_frames[snail_frame_index]
+                if fly_frame_index == 0 :
+                    fly_frame_index = 1
+                else:
+                    fly_frame_index = 0
+                fly_surf = fly_frames[fly_frame_index]
     
     if game_active:
         # Draw everything on the screen during active gameplay
@@ -126,7 +169,8 @@ while True:
         player_rect.y += player_gravity
         if player_rect.bottom >= 300:
             # If player is below the ground, keep it on the ground
-            player_rect.bottom = 300            
+            player_rect.bottom = 300 
+        player_animation()           
         screen.blit(player_surf, player_rect)  # Render walking animation
         
         obstacle_rect_list = obstacle_movement(obstacle_rect_list)
